@@ -1,0 +1,75 @@
+:root {
+  --bg: #f6f7f9;
+  --paper: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e3e6eb;
+  --accent: #3b82f6;
+  --accent-soft: #dbeafe;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--ink); }
+
+.app { max-width: 880px; margin: 24px auto; padding: 0 16px 48px; }
+.app-header h1 { font-size: 22px; margin: 0 0 4px; }
+.app-header .sub { color: var(--muted); margin: 0 0 16px; }
+.app-header .sub code { background: #eef2f6; padding: 1px 6px; border-radius: 4px; }
+
+/* Toolbar */
+.toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  background: var(--paper); border: 1px solid var(--border);
+  border-bottom: none; border-radius: 8px 8px 0 0; padding: 6px 8px;
+}
+.tb-btn { font: inherit; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 4px 8px; cursor: pointer; color: var(--ink); }
+.tb-btn:hover { background: #eef2f6; }
+.tb-active { background: var(--accent-soft); border-color: var(--accent); }
+.tb-sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 4px; }
+.tb-select { font: inherit; padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border); background: white; }
+
+/* Editor */
+.editor-frame { position: relative; background: var(--paper); border: 1px solid var(--border); border-radius: 0 0 8px 8px; padding: 16px 20px 32px; min-height: 320px; }
+.editor-input { outline: none; min-height: 280px; line-height: 1.6; }
+.editor-placeholder { position: absolute; top: 16px; left: 20px; color: #9aa3af; pointer-events: none; }
+
+/* Theme */
+.le-paragraph { margin: 0 0 8px; }
+.le-h1 { font-size: 28px; line-height: 1.25; margin: 16px 0 8px; }
+.le-h2 { font-size: 22px; line-height: 1.3; margin: 16px 0 6px; }
+.le-h3 { font-size: 18px; line-height: 1.35; margin: 14px 0 6px; }
+.le-quote { border-left: 3px solid var(--border); margin: 8px 0; padding: 4px 12px; color: var(--muted); }
+.le-ul, .le-ol { margin: 8px 0 8px 24px; }
+.le-li { margin: 2px 0; }
+.le-link { color: var(--accent); text-decoration: underline; }
+.le-bold { font-weight: 700; }
+.le-italic { font-style: italic; }
+.le-underline { text-decoration: underline; }
+.le-code-inline { background: #f0f3f6; padding: 1px 4px; border-radius: 3px; font-family: ui-monospace, Menlo, monospace; font-size: 0.92em; }
+
+/* Presence bar */
+.presence {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  background: var(--paper); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 10px; margin: 0 0 8px;
+}
+.presence .me, .presence .peer { display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px; border-radius: 999px; background: #f6f8fb; }
+.presence .me { background: var(--accent-soft); }
+.presence .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.presence .name { font-weight: 600; cursor: pointer; }
+.presence .me .name { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.presence .role, .presence .ago, .presence .muted { color: var(--muted); font-size: 12px; }
+.presence .peers { display: flex; flex-wrap: wrap; gap: 6px; }
+.presence .sync { display: inline-flex; align-items: center; gap: 6px; }
+.sync-pill { padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #eef2f6; color: var(--muted); }
+.sync-pill.phase-saving { background: #fff7e6; color: #b45309; }
+.sync-pill.phase-saved { background: #ecfdf5; color: #047857; }
+.sync-pill.phase-error { background: #fee2e2; color: #b91c1c; }
+.sync-pill.phase-loading { background: #eef2f6; color: #6b7280; }
+.sync-pill.phase-idle { background: #ecfdf5; color: #047857; }
+.ver { font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; }
+.err { color: #b91c1c; cursor: help; }
+
+/* Footer */
+.app-footer { margin-top: 16px; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px; }
