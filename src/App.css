@@ -68,6 +68,79 @@ body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "He
 .tb-color span.tb-bg { color: var(--muted); }
 .tb-color input[type="color"] { width: 22px; height: 18px; padding: 0; border: none; background: none; cursor: pointer; }
 
+/* Insert dropdown */
+.tb-dropdown { position: relative; display: inline-block; }
+.tb-insert-btn { font-weight: 600; }
+.tb-menu {
+  position: absolute; z-index: 20; top: calc(100% + 4px); left: 0;
+  min-width: 210px; max-height: 60vh; overflow: auto;
+  background: var(--paper); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 4px;
+}
+.tb-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: inherit; background: transparent; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--ink); }
+.tb-menu-item:hover { background: #eef2f6; }
+.tb-menu-icon { width: 20px; text-align: center; font-size: 15px; }
+
+/* Page break */
+.le-pagebreak-inner { display: flex; align-items: center; gap: 10px; margin: 12px 0; user-select: none; }
+.le-pagebreak-line { flex: 1; height: 0; border-top: 2px dashed var(--border); }
+.le-pagebreak-label { font-size: 10px; letter-spacing: 1px; color: var(--muted); font-weight: 700; }
+@media print { .le-pagebreak-inner { display: none; } }
+
+/* Embeds (YouTube / Figma / Tweet) */
+.le-embed-frame { margin: 10px 0; }
+.le-embed-frame.le-yt, .le-embed-frame.le-figma { position: relative; width: 100%; aspect-ratio: 16 / 9; }
+.le-embed-frame.le-yt iframe, .le-embed-frame.le-figma iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 1px solid var(--border); border-radius: 8px; }
+.le-embed-frame.le-tweet { display: flex; justify-content: center; }
+
+/* Equation */
+.le-eq { cursor: pointer; }
+.le-eq-block { display: block; text-align: center; margin: 10px 0; }
+.le-eq-inline { display: inline-block; }
+.le-eq-input { font-family: ui-monospace, Menlo, monospace; font-size: 13px; padding: 4px 8px; border: 1px solid var(--accent); border-radius: 6px; min-width: 260px; }
+
+/* Poll */
+.le-poll { border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 10px 0; background: #fbfcfe; }
+.le-poll-q { width: 100%; font-weight: 600; font-size: 15px; border: none; border-bottom: 1px solid var(--border); padding: 4px 0 6px; margin-bottom: 8px; background: transparent; }
+.le-poll-opt { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+.le-poll-check { border: none; background: transparent; font-size: 18px; cursor: pointer; line-height: 1; }
+.le-poll-bar { position: relative; flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; overflow: hidden; background: white; }
+.le-poll-bar::before { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--pct, 0%); background: var(--accent-soft); transition: width 0.2s; }
+.le-poll-opt-text, .le-poll-count { position: relative; z-index: 1; }
+.le-poll-opt-text { flex: 1; border: none; background: transparent; font: inherit; }
+.le-poll-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.le-poll-mine .le-poll-bar { border-color: var(--accent); }
+.le-poll-add { margin-top: 6px; border: 1px dashed var(--border); background: transparent; border-radius: 6px; padding: 4px 10px; font: inherit; color: var(--muted); cursor: pointer; }
+
+/* Sticky note */
+.le-sticky { width: 240px; margin: 10px 0; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); padding: 6px 8px 8px; transform: rotate(-1deg); }
+.le-sticky-bar { display: flex; justify-content: flex-end; }
+.le-sticky-color { border: none; background: transparent; cursor: pointer; font-size: 13px; }
+.le-sticky-text { width: 100%; min-height: 96px; border: none; background: transparent; resize: vertical; font: 14px/1.4 "Comic Sans MS", "Segoe Print", cursive; }
+.le-sticky-text:focus { outline: none; }
+
+/* Excalidraw sketch */
+.le-sketch { border: 1px solid var(--border); border-radius: 10px; margin: 10px 0; overflow: hidden; }
+.le-sketch-bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #f7f9fb; border-bottom: 1px solid var(--border); }
+.le-sketch-title { font-size: 12px; color: var(--muted); margin-right: auto; }
+.le-sketch-swatch { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+.le-sketch-swatch.on { border-color: var(--accent); }
+.le-sketch-clear { font: inherit; font-size: 12px; border: 1px solid var(--border); background: white; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.le-sketch-canvas { display: block; width: 100%; height: auto; background: white; touch-action: none; cursor: crosshair; }
+
+/* Columns */
+.le-columns { display: grid; gap: 10px; margin: 10px 0; }
+.le-col { min-height: 90px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; font: inherit; resize: vertical; }
+.le-col:focus { outline: none; border-color: var(--accent); }
+
+/* Collapsible */
+.le-collapsible { border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+.le-collapsible-title { display: flex; align-items: center; gap: 6px; background: #f7f9fb; padding: 6px 8px; }
+.le-collapsible-toggle { border: none; background: transparent; cursor: pointer; font-size: 14px; width: 20px; }
+.le-collapsible-title-input { flex: 1; border: none; background: transparent; font: inherit; font-weight: 600; }
+.le-collapsible-content { width: 100%; min-height: 70px; border: none; border-top: 1px solid var(--border); padding: 8px; font: inherit; resize: vertical; }
+.le-collapsible-content:focus, .le-collapsible-title-input:focus { outline: none; }
+
 /* Presence bar */
 .presence {
   display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
@@ -99,6 +172,11 @@ body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "He
 .editor-frame.canvas-mode .editor-input ::selection { background: transparent; }
 .editor-frame.canvas-mode .editor-input::selection { background: transparent; }
 .editor-frame.canvas-mode .le-link { color: transparent; }
+/* Interactive decorator widgets stay fully legible in canvas mode. */
+.editor-frame.canvas-mode :is(.le-poll, .le-sticky, .le-eq, .le-collapsible, .le-columns, .le-sketch, .le-embed-frame, .le-pagebreak-inner),
+.editor-frame.canvas-mode :is(.le-poll, .le-sticky, .le-eq, .le-collapsible, .le-columns) :is(input, textarea) {
+  color: var(--ink); caret-color: auto;
+}
 
 .particle-canvas {
   position: absolute;

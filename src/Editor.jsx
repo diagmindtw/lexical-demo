@@ -18,6 +18,13 @@ import { CodeNode, CodeHighlightNode } from '@lexical/code'
 import { TableNode, TableCellNode, TableRowNode } from '@lexical/table'
 import { HorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode'
 import { ImageNode } from './nodes/ImageNode'
+import { PageBreakNode } from './nodes/PageBreakNode'
+import { EquationNode } from './nodes/EquationNode'
+import { PollNode } from './nodes/PollNode'
+import { StickyNode } from './nodes/StickyNode'
+import { ExcalidrawNode } from './nodes/ExcalidrawNode'
+import { ColumnsNode, CollapsibleNode } from './nodes/LayoutNodes'
+import { YouTubeNode, FigmaNode, TweetNode } from './nodes/EmbedNodes'
 
 import Toolbar from './Toolbar'
 import PresenceBar from './PresenceBar'
@@ -67,6 +74,7 @@ function pageWidthPx({ pageSize, orientation }) {
 function TestStatePlugin() {
   const [editor] = useLexicalComposerContext()
   useEffect(() => {
+    window.__lexicalEditor = editor
     const publish = () => {
       window.__lexicalState = JSON.stringify(editor.getEditorState().toJSON())
       editor.getEditorState().read(() => {
@@ -88,6 +96,8 @@ const initialConfig = {
     CodeNode, CodeHighlightNode,
     TableNode, TableCellNode, TableRowNode,
     HorizontalRuleNode, ImageNode,
+    PageBreakNode, EquationNode, PollNode, StickyNode, ExcalidrawNode,
+    ColumnsNode, CollapsibleNode, YouTubeNode, FigmaNode, TweetNode,
   ],
 }
 

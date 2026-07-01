@@ -29,8 +29,38 @@ import { INSERT_TABLE_COMMAND } from '@lexical/table'
 import { $createHorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode'
 import { $getNearestNodeOfType, $insertNodeToNearestRoot } from '@lexical/utils'
 import { $createImageNode } from './nodes/ImageNode'
+import { $createPageBreakNode } from './nodes/PageBreakNode'
+import { $createEquationNode } from './nodes/EquationNode'
+import { $createPollNode } from './nodes/PollNode'
+import { $createStickyNode } from './nodes/StickyNode'
+import { $createExcalidrawNode } from './nodes/ExcalidrawNode'
+import { $createColumnsNode, $createCollapsibleNode } from './nodes/LayoutNodes'
+import {
+  $createYouTubeNode, parseYouTubeId,
+  $createFigmaNode,
+  $createTweetNode, parseTweetId,
+} from './nodes/EmbedNodes'
 
 const FONT_FAMILIES = ['Arial', 'Georgia', 'Courier New', 'Times New Roman', 'Trebuchet MS', 'Verdana']
+
+// The full Lexical Playground "Insert" menu.
+const INSERT_ITEMS = [
+  { key: 'hr', icon: '—', label: 'Horizontal Rule' },
+  { key: 'pagebreak', icon: '⤓', label: 'Page Break' },
+  { key: 'image', icon: '🖼', label: 'Image' },
+  { key: 'gif', icon: '🎞', label: 'GIF' },
+  { key: 'excalidraw', icon: '✏️', label: 'Excalidraw' },
+  { key: 'table', icon: '▦', label: 'Table' },
+  { key: 'poll', icon: '📊', label: 'Poll' },
+  { key: 'columns', icon: '▥', label: 'Columns Layout' },
+  { key: 'equation', icon: '∑', label: 'Equation' },
+  { key: 'sticky', icon: '🗒', label: 'Sticky Note' },
+  { key: 'collapsible', icon: '▸', label: 'Collapsible container' },
+  { key: 'date', icon: '📅', label: 'Date' },
+  { key: 'tweet', icon: '𝕏', label: 'X (Tweet)' },
+  { key: 'youtube', icon: '▶', label: 'Youtube Video' },
+  { key: 'figma', icon: '⬡', label: 'Figma Document' },
+]
 
 function Btn({ active, onClick, title, children, testid }) {
   return (
@@ -59,7 +89,9 @@ export default function Toolbar({ pageSetup, setPageSetup }) {
   const [fontSize, setFontSize] = useState(15)
   const [fontColor, setFontColor] = useState('#000000')
   const [bgColor, setBgColor] = useState('#ffffff')
+  const [insertOpen, setInsertOpen] = useState(false)
   const fileRef = useRef(null)
+  const insertRef = useRef(null)
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
@@ -156,10 +188,61 @@ export default function Toolbar({ pageSetup, setPageSetup }) {
     reader.readAsDataURL(file)
   }
 
+  const insertBlock = (make) => editor.update(() => { $insertNodeToNearestRoot(make()) })
+
   const doInsert = (what) => {
-    if (what === 'image') { fileRef.current?.click(); return }
-    if (what === 'hr') { editor.update(() => { $insertNodeToNearestRoot($createHorizontalRuleNode()) }); return }
-    if (what === 'table') { editor.dispatchCommand(INSERT_TABLE_COMMAND, { columns: '3', rows: '3' }); return }
+    switch (what) {
+      case 'hr': return insertBlock($createHorizontalRuleNode)
+      case 'pagebreak': return insertBlock($createPageBreakNode)
+      case 'image': return fileRef.current?.click()
+      case 'gif': {
+        const url = window.prompt('GIF URL', 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif')
+        if (url) insertBlock(() => $createImageNode(url, 'gif'))
+        return
+      }
+      case 'excalidraw': return insertBlock($createExcalidrawNode)
+      case 'table': return editor.dispatchCommand(INSERT_TABLE_COMMAND, { columns: '3', rows: '3' })
+      case 'poll': {
+        const q = window.prompt('Poll question', '')
+        if (q !== null) insertBlock(() => $createPollNode(q || ''))
+        return
+      }
+      case 'columns': {
+        const n = parseInt(window.prompt('How many columns? (2–4)', '2'), 10)
+        insertBlock(() => $createColumnsNode(Math.max(2, Math.min(4, n || 2))))
+        return
+      }
+      case 'equation': {
+        const eq = window.prompt('LaTeX equation', 'c = \\pm\\sqrt{a^2 + b^2}')
+        if (eq !== null) insertBlock(() => $createEquationNode(eq, false))
+        return
+      }
+      case 'sticky': return insertBlock($createStickyNode)
+      case 'collapsible': return insertBlock($createCollapsibleNode)
+      case 'date': {
+        const d = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+        editor.update(() => { const sel = $getSelection(); if ($isRangeSelection(sel)) sel.insertText(d) })
+        return
+      }
+      case 'tweet': {
+        const id = parseTweetId(window.prompt('X (Tweet) URL or id', ''))
+        if (id) insertBlock(() => $createTweetNode(id))
+        else if (id === null) window.alert('Could not parse a tweet id from that.')
+        return
+      }
+      case 'youtube': {
+        const id = parseYouTubeId(window.prompt('YouTube URL or video id', ''))
+        if (id) insertBlock(() => $createYouTubeNode(id))
+        else window.alert('Could not parse a YouTube video id from that.')
+        return
+      }
+      case 'figma': {
+        const url = window.prompt('Figma file/proto URL', 'https://www.figma.com/file/')
+        if (url) insertBlock(() => $createFigmaNode(url))
+        return
+      }
+      default: return
+    }
   }
 
   const insertLink = () => {
@@ -179,6 +262,18 @@ export default function Toolbar({ pageSetup, setPageSetup }) {
     root.addEventListener('keydown', onKey)
     return () => root.removeEventListener('keydown', onKey)
   }, [editor, fontSize]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close the Insert dropdown on outside click / Escape.
+  useEffect(() => {
+    if (!insertOpen) return
+    const onDown = (e) => { if (insertRef.current && !insertRef.current.contains(e.target)) setInsertOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setInsertOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [insertOpen])
+
+  const pickInsert = (what) => { setInsertOpen(false); doInsert(what) }
 
   const blockValue = ['h1', 'h2', 'h3', 'quote', 'code', 'bullet', 'number', 'check'].includes(blockType) ? blockType : 'paragraph'
 
@@ -249,12 +344,21 @@ export default function Toolbar({ pageSetup, setPageSetup }) {
         <option value="justify">Justify</option>
       </select>
 
-      <select className="tb-select" value="" onChange={(e) => { const v = e.target.value; if (v) doInsert(v); e.target.value = '' }} data-testid="tb-insert" title="Insert specialized editor node">
-        <option value="">Insert…</option>
-        <option value="image">🖼 Image</option>
-        <option value="table">▦ Table</option>
-        <option value="hr">— Horizontal Rule</option>
-      </select>
+      <div className="tb-dropdown" ref={insertRef}>
+        <button type="button" className="tb-btn tb-insert-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => setInsertOpen((v) => !v)} data-testid="tb-insert" title="Insert a specialized editor node" aria-expanded={insertOpen}>
+          + Insert ▾
+        </button>
+        {insertOpen && (
+          <div className="tb-menu" role="menu" data-testid="tb-insert-menu">
+            {INSERT_ITEMS.map((it) => (
+              <button key={it.key} type="button" role="menuitem" className="tb-menu-item" onMouseDown={(e) => e.preventDefault()} onClick={() => pickInsert(it.key)} data-testid={`tb-ins-${it.key}`}>
+                <span className="tb-menu-icon" aria-hidden="true">{it.icon}</span>
+                <span className="tb-menu-text">{it.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={insertImageFromFile} data-testid="tb-imagefile" />
       <div className="tb-sep" />
 
