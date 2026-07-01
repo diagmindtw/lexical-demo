@@ -71,5 +71,35 @@ body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "He
 .ver { font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; }
 .err { color: #b91c1c; cursor: help; }
 
+/* ---- Canvas particle mode ---- */
+/* In canvas mode the contenteditable stays fully interactive but invisible:
+   transparent text + transparent native caret + transparent native selection.
+   The <canvas> (pointer-events:none) is the only thing you see. */
+.editor-frame.canvas-mode .editor-input { color: transparent; caret-color: transparent; }
+.editor-frame.canvas-mode .editor-input ::selection { background: transparent; }
+.editor-frame.canvas-mode .editor-input::selection { background: transparent; }
+.editor-frame.canvas-mode .le-link { color: transparent; }
+
+.particle-canvas {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Control panel */
+.cv-panel {
+  background: var(--paper); border: 1px solid var(--border); border-bottom: none;
+  padding: 8px 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.cv-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.cv-controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 18px; }
+.cv-controls.cv-dim { opacity: 0.5; }
+.cv-row { display: grid; grid-template-columns: 96px 1fr 44px; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.cv-row input[type="range"] { width: 100%; }
+.cv-label { white-space: nowrap; }
+.cv-val { text-align: right; font-family: ui-monospace, monospace; color: var(--ink); }
+.cv-checks { grid-template-columns: 1fr; display: flex; gap: 14px; }
+.cv-row select { width: 100%; font: inherit; padding: 2px 4px; }
+
 /* Footer */
 .app-footer { margin-top: 16px; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px; }

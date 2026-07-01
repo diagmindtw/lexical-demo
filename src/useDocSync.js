@@ -19,8 +19,17 @@ const POLL_MS = 2500
 // before the next save flushes them upstream.
 const LOCAL_GRACE_MS = 1500
 
+// Test/offline escape hatch: `?nosync=1` skips all backend traffic so the
+// canvas-parity e2e test can drive a deterministic, purely-local editor.
+const SYNC_DISABLED =
+  typeof location !== 'undefined' && new URLSearchParams(location.search).has('nosync')
+
 export function useDocSync(editor) {
-  const [status, setStatus] = useState({ phase: 'loading', version: 0, lastError: null })
+  const [status, setStatus] = useState({
+    phase: SYNC_DISABLED ? 'idle' : 'loading',
+    version: 0,
+    lastError: null,
+  })
   const versionRef = useRef(0)
   const lastEditAtRef = useRef(0)
   const dirtyRef = useRef(false)
@@ -30,7 +39,7 @@ export function useDocSync(editor) {
 
   // 1) Initial fetch.
   useEffect(() => {
-    if (!editor) return
+    if (!editor || SYNC_DISABLED) return
     let cancelled = false
     ;(async () => {
       try {
@@ -54,7 +63,7 @@ export function useDocSync(editor) {
 
   // 2) Listen to editor changes → mark dirty + debounce a save.
   useEffect(() => {
-    if (!editor) return
+    if (!editor || SYNC_DISABLED) return
     return editor.registerUpdateListener(({ dirtyElements, dirtyLeaves }) => {
       if (isApplyingRemoteRef.current) return
       if (!initialLoadDoneRef.current) return
@@ -99,7 +108,7 @@ export function useDocSync(editor) {
 
   // 3) Background polling for remote changes.
   useEffect(() => {
-    if (!editor) return
+    if (!editor || SYNC_DISABLED) return
     let cancelled = false
     const tick = async () => {
       if (cancelled) return
