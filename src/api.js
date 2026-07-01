@@ -26,8 +26,8 @@ async function post(path, body) {
 export const api = {
   getDoc: (doc = DOC_ID) => get('get.php', { doc }),
   pollDoc: (since, doc = DOC_ID) => get('poll.php', { doc, since }),
-  saveDoc: (content, baseVersion, sessionId, doc = DOC_ID) =>
-    post('save.php', { doc, content, base_version: baseVersion, session_id: sessionId }),
+  saveDoc: (content, baseVersion, sessionId, meta = undefined, doc = DOC_ID) =>
+    post('save.php', { doc, content, base_version: baseVersion, session_id: sessionId, meta }),
   pingPresence: (sessionId, name, color, doc = DOC_ID) =>
     post('presence-ping.php', { doc, session_id: sessionId, name, color }),
   listPresence: (excludeSession, doc = DOC_ID) =>

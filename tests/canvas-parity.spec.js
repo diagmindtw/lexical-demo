@@ -36,19 +36,23 @@ test('canvas actually paints particles for typed text', async ({ page }) => {
   const ed = page.locator('.editor-input')
   await ed.click({ force: true })
   await page.keyboard.type('ABCDEFG')
-  await page.waitForTimeout(300)
+  await expect(page.locator('[data-testid=particle-canvas]')).toBeVisible()
 
-  const canvas = page.locator('[data-testid=particle-canvas]')
-  await expect(canvas).toBeVisible()
-
-  const paintedPixels = await page.evaluate(() => {
-    const c = document.querySelector('[data-testid=particle-canvas]')
-    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data
-    let n = 0
-    for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++
-    return n
-  })
-  expect(paintedPixels).toBeGreaterThan(50)
+  // Font load + first paint can lag; poll until the canvas has painted.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const c = document.querySelector('[data-testid=particle-canvas]')
+          if (!c) return 0
+          const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data
+          let n = 0
+          for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++
+          return n
+        }),
+      { timeout: 6000 },
+    )
+    .toBeGreaterThan(50)
 })
 
 test('mouse interaction still works in canvas mode (click to place cursor)', async ({ page }) => {
