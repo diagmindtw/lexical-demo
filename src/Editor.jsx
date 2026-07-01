@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -103,7 +103,17 @@ function EditorInner() {
   // Page setup (synced as doc meta)
   const [pageSetup, setPageSetup] = useState({ pageSize: 'A4', orientation: 'portrait' })
 
-  const status = useDocSync(editor, pageSetup, setPageSetup)
+  // Remote meta may be null (doc saved before the meta column existed) or a
+  // partial object — always coalesce back to a full page-setup shape so the
+  // toolbar/frame never destructure null. Accepts either a value or an updater.
+  const applyMeta = useCallback((next) => {
+    setPageSetup((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next
+      return { pageSize: 'A4', orientation: 'portrait', ...(resolved || {}) }
+    })
+  }, [])
+
+  const status = useDocSync(editor, pageSetup, applyMeta)
   const peers = usePresence()
 
   const particleFont = PARTICLE_FONTS.find((f) => f.id === particleFontId) || PARTICLE_FONTS[0]
