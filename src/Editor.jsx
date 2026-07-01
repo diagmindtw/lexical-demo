@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -18,6 +18,12 @@ import Toolbar from './Toolbar'
 import PresenceBar from './PresenceBar'
 import { useDocSync } from './useDocSync'
 import { usePresence } from './usePresence'
+
+import CanvasParticleLayer from './canvas/CanvasParticleLayer'
+import ControlPanel from './canvas/ControlPanel'
+import { useParticleFont } from './canvas/useParticleFont'
+import { PARTICLE_DEFAULTS } from './canvas/particleFont'
+import { PARTICLE_FONTS, JUSTFONT_FAMILIES, ensureFontFaces, ensureJustfontLoader } from './canvas/fonts'
 
 const theme = {
   paragraph: 'le-paragraph',
@@ -40,6 +46,23 @@ function PluginsSubtree() {
   return <PresenceBar peers={peers} status={status} />
 }
 
+// Mirrors the live EditorState onto window for the canvas-parity e2e test.
+function TestStatePlugin() {
+  const [editor] = useLexicalComposerContext()
+  useEffect(() => {
+    const publish = () => {
+      const state = editor.getEditorState()
+      window.__lexicalState = JSON.stringify(state.toJSON())
+      state.read(() => {
+        window.__lexicalText = editor.getRootElement()?.textContent ?? ''
+      })
+    }
+    publish()
+    return editor.registerUpdateListener(publish)
+  }, [editor])
+  return null
+}
+
 const initialConfig = {
   namespace: 'lexical-demo',
   theme,
@@ -47,24 +70,63 @@ const initialConfig = {
   nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, CodeNode],
 }
 
-export default function Editor() {
+function CanvasEditorInner() {
+  const [editor] = useLexicalComposerContext()
+  const [canvasMode, setCanvasMode] = useState(true)
+  const [params, setParams] = useState(PARTICLE_DEFAULTS)
+  const [particleFontId, setParticleFontId] = useState(PARTICLE_FONTS[0].id)
+  const [justfontId, setJustfontId] = useState('none')
+
+  const particleFont = PARTICLE_FONTS.find((f) => f.id === particleFontId) || PARTICLE_FONTS[0]
+  const font = useParticleFont(particleFont.ttf)
+
+  useEffect(() => { ensureFontFaces() }, [])
+  useEffect(() => { if (justfontId !== 'none') ensureJustfontLoader() }, [justfontId])
+
+  const jf = JUSTFONT_FAMILIES.find((f) => f.id === justfontId)
+  // In canvas mode the contenteditable is invisible; give it the font whose
+  // outlines we draw so DOM metrics and particles align. justfont families
+  // style the DOM via their CSS class (particles fall back to the bundled TTF).
+  const inputStyle = canvasMode && justfontId === 'none' ? { fontFamily: `'${particleFont.family}', sans-serif` } : undefined
+  const inputClass = 'editor-input' + (canvasMode && jf?.cssClass ? ' ' + jf.cssClass : '')
+
   return (
-    <LexicalComposer initialConfig={initialConfig}>
-      <PluginsSubtree />
+    <>
       <Toolbar />
-      <div className="editor-frame">
+      <ControlPanel
+        canvasMode={canvasMode}
+        onToggleCanvas={setCanvasMode}
+        params={params}
+        setParams={setParams}
+        particleFontId={particleFontId}
+        setParticleFontId={setParticleFontId}
+        justfontId={justfontId}
+        setJustfontId={setJustfontId}
+      />
+      <div className={'editor-frame' + (canvasMode ? ' canvas-mode' : '')}>
         <RichTextPlugin
           contentEditable={
-            <ContentEditable className="editor-input" aria-label="Document body" />
+            <ContentEditable className={inputClass} style={inputStyle} aria-label="Document body" />
           }
-          placeholder={<div className="editor-placeholder">Start typing… your edits sync to the database in ~1s.</div>}
+          placeholder={<div className="editor-placeholder">Start typing… edits sync in ~1s.</div>}
           ErrorBoundary={LexicalErrorBoundary}
         />
         <HistoryPlugin />
         <AutoFocusPlugin />
         <ListPlugin />
         <LinkPlugin />
+        <CanvasParticleLayer editor={editor} font={font} params={params} active={canvasMode} />
       </div>
+    </>
+  )
+}
+
+export default function Editor() {
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <PluginsSubtree />
+      <TestStatePlugin />
+      <CanvasEditorInner />
     </LexicalComposer>
   )
 }

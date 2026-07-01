@@ -20,7 +20,11 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
       - run: npm run build
+      - name: Canvas-parity e2e tests
+        run: npm run test:e2e
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
