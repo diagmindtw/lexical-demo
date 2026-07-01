@@ -5,14 +5,19 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
+import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin'
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
+import { TablePlugin } from '@lexical/react/LexicalTablePlugin'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { ListNode, ListItemNode } from '@lexical/list'
 import { LinkNode } from '@lexical/link'
-import { CodeNode } from '@lexical/code'
+import { CodeNode, CodeHighlightNode } from '@lexical/code'
+import { TableNode, TableCellNode, TableRowNode } from '@lexical/table'
+import { HorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode'
+import { ImageNode } from './nodes/ImageNode'
 
 import Toolbar from './Toolbar'
 import PresenceBar from './PresenceBar'
@@ -29,31 +34,42 @@ const theme = {
   paragraph: 'le-paragraph',
   quote: 'le-quote',
   heading: { h1: 'le-h1', h2: 'le-h2', h3: 'le-h3', h4: 'le-h4', h5: 'le-h5' },
-  list: { ul: 'le-ul', ol: 'le-ol', listitem: 'le-li' },
+  list: { ul: 'le-ul', ol: 'le-ol', listitem: 'le-li', checklist: 'le-checklist' },
   link: 'le-link',
+  code: 'le-code-block',
+  table: 'le-table',
+  tableCell: 'le-td',
+  tableRow: 'le-tr',
   text: {
     bold: 'le-bold',
     italic: 'le-italic',
     underline: 'le-underline',
+    strikethrough: 'le-strike',
+    subscript: 'le-sub',
+    superscript: 'le-sup',
     code: 'le-code-inline',
   },
 }
 
-function PluginsSubtree() {
-  const [editor] = useLexicalComposerContext()
-  const status = useDocSync(editor)
-  const peers = usePresence()
-  return <PresenceBar peers={peers} status={status} />
+// Editor page width (px @96dpi) by page size + orientation.
+const PAGE_DIMS = {
+  A4: [794, 1123],
+  Letter: [816, 1056],
+  Legal: [816, 1344],
+}
+function pageWidthPx({ pageSize, orientation }) {
+  if (pageSize === 'Full' || !PAGE_DIMS[pageSize]) return null
+  const [p, l] = PAGE_DIMS[pageSize]
+  return orientation === 'landscape' ? l : p
 }
 
-// Mirrors the live EditorState onto window for the canvas-parity e2e test.
+// Mirrors the live EditorState onto window for e2e assertions.
 function TestStatePlugin() {
   const [editor] = useLexicalComposerContext()
   useEffect(() => {
     const publish = () => {
-      const state = editor.getEditorState()
-      window.__lexicalState = JSON.stringify(state.toJSON())
-      state.read(() => {
+      window.__lexicalState = JSON.stringify(editor.getEditorState().toJSON())
+      editor.getEditorState().read(() => {
         window.__lexicalText = editor.getRootElement()?.textContent ?? ''
       })
     }
@@ -67,15 +83,28 @@ const initialConfig = {
   namespace: 'lexical-demo',
   theme,
   onError(err) { console.error('Lexical error', err) },
-  nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, CodeNode],
+  nodes: [
+    HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode,
+    CodeNode, CodeHighlightNode,
+    TableNode, TableCellNode, TableRowNode,
+    HorizontalRuleNode, ImageNode,
+  ],
 }
 
-function CanvasEditorInner() {
+function EditorInner() {
   const [editor] = useLexicalComposerContext()
+
+  // Canvas particle state
   const [canvasMode, setCanvasMode] = useState(true)
   const [params, setParams] = useState(PARTICLE_DEFAULTS)
   const [particleFontId, setParticleFontId] = useState(PARTICLE_FONTS[0].id)
   const [justfontId, setJustfontId] = useState('none')
+
+  // Page setup (synced as doc meta)
+  const [pageSetup, setPageSetup] = useState({ pageSize: 'A4', orientation: 'portrait' })
+
+  const status = useDocSync(editor, pageSetup, setPageSetup)
+  const peers = usePresence()
 
   const particleFont = PARTICLE_FONTS.find((f) => f.id === particleFontId) || PARTICLE_FONTS[0]
   const font = useParticleFont(particleFont.ttf)
@@ -84,15 +113,16 @@ function CanvasEditorInner() {
   useEffect(() => { if (justfontId !== 'none') ensureJustfontLoader() }, [justfontId])
 
   const jf = JUSTFONT_FAMILIES.find((f) => f.id === justfontId)
-  // In canvas mode the contenteditable is invisible; give it the font whose
-  // outlines we draw so DOM metrics and particles align. justfont families
-  // style the DOM via their CSS class (particles fall back to the bundled TTF).
   const inputStyle = canvasMode && justfontId === 'none' ? { fontFamily: `'${particleFont.family}', sans-serif` } : undefined
   const inputClass = 'editor-input' + (canvasMode && jf?.cssClass ? ' ' + jf.cssClass : '')
 
+  const w = pageWidthPx(pageSetup)
+  const frameStyle = w ? { maxWidth: w + 'px', marginLeft: 'auto', marginRight: 'auto' } : undefined
+
   return (
     <>
-      <Toolbar />
+      <PresenceBar peers={peers} status={status} />
+      <Toolbar pageSetup={pageSetup} setPageSetup={setPageSetup} />
       <ControlPanel
         canvasMode={canvasMode}
         onToggleCanvas={setCanvasMode}
@@ -103,7 +133,7 @@ function CanvasEditorInner() {
         justfontId={justfontId}
         setJustfontId={setJustfontId}
       />
-      <div className={'editor-frame' + (canvasMode ? ' canvas-mode' : '')}>
+      <div className={'editor-frame' + (canvasMode ? ' canvas-mode' : '')} style={frameStyle} data-testid="editor-frame">
         <RichTextPlugin
           contentEditable={
             <ContentEditable className={inputClass} style={inputStyle} aria-label="Document body" />
@@ -114,7 +144,9 @@ function CanvasEditorInner() {
         <HistoryPlugin />
         <AutoFocusPlugin />
         <ListPlugin />
+        <CheckListPlugin />
         <LinkPlugin />
+        <TablePlugin />
         <CanvasParticleLayer editor={editor} font={font} params={params} active={canvasMode} />
       </div>
     </>
@@ -124,9 +156,8 @@ function CanvasEditorInner() {
 export default function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <PluginsSubtree />
       <TestStatePlugin />
-      <CanvasEditorInner />
+      <EditorInner />
     </LexicalComposer>
   )
 }
